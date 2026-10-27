@@ -600,10 +600,14 @@ function fastifyMultipart (fastify, options, done) {
       const filepath = this.tmpUploads[i]
       try {
         await unlink(filepath)
-      } /* c8 ignore start */ catch (error) {
-        this.log.error(error, 'Could not delete file')
+      } catch (error) {
+        // A missing file needs no cleanup: cleanup can run more than once for a
+        // request (saveRequestFiles, the response 'close' listener and
+        // onResponse), and the handler may have moved the file elsewhere.
+        if (error.code !== 'ENOENT') {
+          this.log.error(error, 'Could not delete file')
+        }
       }
-      /* c8 ignore stop */
     }
   }
 
